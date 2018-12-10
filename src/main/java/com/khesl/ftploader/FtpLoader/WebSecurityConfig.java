@@ -1,5 +1,6 @@
 package com.khesl.ftploader.FtpLoader;
 
+import com.khesl.ftploader.FtpLoader.utils.MyParametersController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,6 +16,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import javax.sql.DataSource;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import java.io.IOException;
 
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements WebMvcConfigurer {
@@ -23,7 +25,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements W
     public UserDetailsService userDetailsService() {
         InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
         // фигачим пользователей
-        manager.createUser(User.withDefaultPasswordEncoder().username("user").password("password").roles("USER").build());
+        try {
+            if (Boolean.parseBoolean(new MyParametersController().getProperties("base_authorize_use_default_user")))
+            manager.createUser(User.withDefaultPasswordEncoder()
+                    .username(new MyParametersController().getProperties("base_authorize_default_user"))
+                    .password(new MyParametersController().getProperties("base_authorize_default_password"))
+                    .roles("USER").build());
+        } catch (IOException e) {}
+
         return manager;
     }
 

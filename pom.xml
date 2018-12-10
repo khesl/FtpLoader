@@ -93,7 +93,15 @@
 			<groupId>javax.persistence</groupId>
 			<artifactId>persistence-api</artifactId>
 		<version>1.0</version>
-	</dependency>
+		</dependency>
+
+		<!-- Ftp work ttps://mvnrepository.com/artifact/commons-net/commons-net -->
+		<dependency>
+			<groupId>commons-net</groupId>
+			<artifactId>commons-net</artifactId>
+			<version>3.6</version>
+		</dependency>
+
 
 	</dependencies>
 

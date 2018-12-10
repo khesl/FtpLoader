@@ -1,6 +1,7 @@
 package com.khesl.ftploader.FtpLoader.beans;
 
 import javax.persistence.*;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -15,19 +16,23 @@ public class Visit {
     private String userName;
     private Date date;
     private String path;
-    private String parameters;
+    private String description;
 
     public Visit(){
         super();
         id = getNewId();
     }
 
-    public Visit(String userName, Date date, String path, String parameters){
+    public Visit(String userName, Date date, String path, String description){
         this();
         this.userName = userName;
         this.date = date;
         this.path = path;
-        this.parameters = parameters;
+        this.description = description;
+    }
+
+    public Visit(String userName, String path, String description){
+        this(userName, Calendar.getInstance().getTime(), path, description);
     }
 
     public int getNewId(){
@@ -45,8 +50,8 @@ public class Visit {
     public String getPath() { return path; }
     public void setPath(String path) { this.path = path; }
 
-    public String getParameters() { return parameters; }
-    public void setParameters(String parameters) { this.parameters = parameters; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
     public long getId() {
         return id;

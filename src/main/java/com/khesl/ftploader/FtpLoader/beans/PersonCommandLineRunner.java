@@ -10,8 +10,8 @@ public class PersonCommandLineRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        for (Person p : this.personRepository.findAll())
-            System.out.println(p.toString());
+        /*for (Person p : this.personRepository.findAll())
+            System.out.println(p.toString());*/
     }
 
     @Autowired
