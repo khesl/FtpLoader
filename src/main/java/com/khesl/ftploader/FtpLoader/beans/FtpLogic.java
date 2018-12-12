@@ -1,11 +1,9 @@
 package com.khesl.ftploader.FtpLoader.beans;
 
 import com.khesl.ftploader.FtpLoader.utils.MyParametersController;
-import com.khesl.ftploader.FtpLoader.utils.Utils;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -27,12 +25,6 @@ public class FtpLogic {
         user = new MyParametersController().getProperties("ftp_user");
         pass = new MyParametersController().getProperties("ftp_password");
     }
-
-    public static FTPClient getFtpClient() {
-        return ftpClient;
-    }
-
-    public String getServer() { return server; }
 
     /**
      * метод для скачивания файла или InputStream с FTP по указанному пути

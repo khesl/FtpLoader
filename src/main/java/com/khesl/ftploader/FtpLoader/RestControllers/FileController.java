@@ -35,7 +35,7 @@ public class FileController {
      * @return File[] - array of files in directory
      * */
     @GetMapping("/check")
-    public Object[] checkFile(@RequestParam("path") String path) throws IOException {
+    public Object[] checkFile(@RequestParam("path") String path) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         System.out.println("Call: /file/check?path" + path);
 
@@ -56,7 +56,7 @@ public class FileController {
 
     /**
      *  Method for upload tree of files in 'path'
-     * for call use {@link "http:/localhost:8080/file/upload?path_to_download=*path*,path_to_save=*path*" }
+     * for call use {@link "http://localhost:8080/file/upload?path_to_download=test_folder_1/test_file_2.txt&path_to_save=src/main/resources/test_file_2.txt" }
      *
      * @param pathToDownload  - REQUIRED!
      * @param pathToSave      - optional!
@@ -132,12 +132,5 @@ public class FileController {
 
         return this.uploadedFilesRepository.findAll();
     }*/
-
-    @GetMapping("/test_ftp")
-    @ResponseBody
-    public String testFTP(){
-        return "{ftpServer: '" + ftpLogic.getServer() + "'}";
-    }
-
 
 }
