@@ -2,6 +2,7 @@ package com.khesl.ftploader.FtpLoader.RestControllers;
 
 import com.khesl.ftploader.FtpLoader.beans.*;
 import com.khesl.ftploader.FtpLoader.utils.MyParametersController;
+import org.apache.commons.net.ftp.FTPFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,14 +35,23 @@ public class FileController {
      * @return File[] - array of files in directory
      * */
     @GetMapping("/check")
-    public File[] checkFile(@RequestParam("path") String path) {
+    public Object[] checkFile(@RequestParam("path") String path) throws IOException {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         System.out.println("Call: /file/check?path" + path);
 
         visitJdbcRepository.insert(new Visit(user.getUsername(),"/check", path));
-
         System.out.println("path: " + path);
-        return new File(path).listFiles();
+
+        boolean use_ftp;
+        try {
+            use_ftp = Boolean.parseBoolean(new MyParametersController().getProperties("ftp_use_loader"));
+        } catch (IOException e) {
+            use_ftp = false;
+        }
+        if (use_ftp) {
+            FTPFile[] files = ftpLogic.getFiles();
+            return files;
+        } else return new File(path).listFiles();
     }
 
     /**
@@ -53,7 +63,7 @@ public class FileController {
      * @return File[] - array of files in directory
      * */
     @GetMapping("/upload")
-    public File[] uploadFile(@RequestParam("path_to_download") String pathToDownload, @RequestParam(value = "path_to_save", required = false) String pathToSave) {
+    public Object uploadFile(@RequestParam("path_to_download") String pathToDownload, @RequestParam(value = "path_to_save", required = false) String pathToSave) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         System.out.println("Call: /file/upload?path" + pathToDownload);
         visitJdbcRepository.insert(new Visit(user.getUsername(),"/upload", pathToDownload));
@@ -66,28 +76,30 @@ public class FileController {
         }
         File[] listFiles;
         if (use_ftp) {
-            File tempFile = ftpLogic.downloadFile(pathToSave, pathToDownload);
-            if (tempFile.isDirectory()) {
-                listFiles = tempFile.listFiles();
-            } else {
-                listFiles = new File[1];
-                listFiles[0] = tempFile;
+            boolean success = false;
+            try {
+                success = ftpLogic.downloadFile(pathToSave, pathToDownload);
+                if (success) return "{\"message\":\"success\"}";
+                else return "{\"message\":\"fail\"}";
+            } catch (IllegalAccessException e) {
+                return "{\"errorMessage\":\"" + e.getMessage() + "\"}";
             }
         } else {
             listFiles = new File(pathToDownload).listFiles();
-        }
 
-        for (File file : listFiles)
-            if (!file.isDirectory()){
-                try {
-                    uploadedFilesJdbcRepository.insert(new UploadedFiles(file.getName(), Calendar.getInstance().getTime(), null),
-                            Files.readAllBytes(file.toPath()));
-                } catch (IOException e) {
-                    System.out.println("--> IOException e");
+
+            for (File file : listFiles)
+                if (!file.isDirectory()){
+                    try {
+                        uploadedFilesJdbcRepository.insert(new UploadedFiles(file.getName(), Calendar.getInstance().getTime(), null),
+                                Files.readAllBytes(file.toPath()));
+                    } catch (IOException e) {
+                        System.out.println("--> IOException e");
+                    }
                 }
-            }
-        System.out.println("pathToDownload: " + pathToDownload);
-        return new File(pathToDownload).listFiles();
+            System.out.println("pathToDownload: " + pathToDownload);
+            return new File(pathToDownload).listFiles();
+        }
     }
 
     @Autowired

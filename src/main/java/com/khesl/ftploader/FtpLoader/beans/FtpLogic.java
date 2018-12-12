@@ -1,8 +1,11 @@
 package com.khesl.ftploader.FtpLoader.beans;
 
 import com.khesl.ftploader.FtpLoader.utils.MyParametersController;
+import com.khesl.ftploader.FtpLoader.utils.Utils;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -23,6 +26,10 @@ public class FtpLogic {
         port = Integer.parseInt(new MyParametersController().getProperties("ftp_port"));
         user = new MyParametersController().getProperties("ftp_user");
         pass = new MyParametersController().getProperties("ftp_password");
+    }
+
+    public static FTPClient getFtpClient() {
+        return ftpClient;
     }
 
     public String getServer() { return server; }
@@ -115,14 +122,17 @@ public class FtpLogic {
     /**
      * метод для скачивания файла или InputStream с FTP по указанному пути
      * example of call: downloadFile("test_folder/file3.txt");
+     * test http link 'http://localhost:8080/file/upload?path_to_download=test_folder_1/test_file_2.txt&path_to_save=src/main/resources/test_file_2.txt'
      *
      * @param localFilePath     - localFilePath to write file, typeOf(String)
      * @param remoteFilePath    - remoteFilePath to read, typeOf(String)
      * @return InputStream - content of file (variations: {@link java.io.File}, String, bytes[], InputStream)
      * */
-    public File downloadFile(String localFilePath, String remoteFilePath) {
+    public boolean downloadFile(String localFilePath, String remoteFilePath) throws IllegalAccessException {
         //FTPClient ftpClient = new FTPClient();
+        boolean success = false;
         try {
+            ftpClient.setControlEncoding("UTF-8");
             ftpClient.connect(server, port);
             ftpClient.login(user, pass);
             ftpClient.enterLocalPassiveMode();
@@ -130,16 +140,23 @@ public class FtpLogic {
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
             System.out.println("Start uploading first file");
-            InputStream inputStream = ftpClient.retrieveFileStream(remoteFilePath);
+            System.out.println("localFilePath: '" + localFilePath + "'");
+            System.out.println("remoteFilePath: '" + remoteFilePath + "'");
 
-            byte[] buffer = new byte[inputStream.available()];
-            inputStream.read(buffer);
+            ftpClient.enterLocalPassiveMode();
+            ftpClient.setAutodetectUTF8(true);
 
-            File targetFile = new File(localFilePath);
-            OutputStream outStream = new FileOutputStream(targetFile);
-            outStream.write(buffer);
+            if (new File(localFilePath).isDirectory()) {
+                //localFilePath += remoteFilePath.split("/")[remoteFilePath.split("/").length-1];
+                throw new IllegalAccessException("wrong filePath to save");
+            }
+            System.out.println("new localFilePath: '" + localFilePath + "'");
 
-            return targetFile;
+            OutputStream outputStream = new FileOutputStream(new File(localFilePath));
+            success = ftpClient.retrieveFile(remoteFilePath, outputStream);
+            outputStream.close();
+            if (success) System.out.println("File #2 has been downloaded successfully.");
+
         } catch (IOException ex) {
             System.out.println("Error: " + ex.getMessage());
             ex.printStackTrace();
@@ -153,7 +170,7 @@ public class FtpLogic {
                 ex.printStackTrace();
             }
         }
-        return null;
+        return success;
     }
 
     /**
@@ -280,5 +297,33 @@ public class FtpLogic {
                 ex.printStackTrace();
             }
         }
+    }
+
+    public FTPFile[] getFiles(){
+        FTPFile[] files = null;
+        try {
+            ftpClient.connect(server, port);
+            ftpClient.login(user, pass);
+            ftpClient.enterLocalPassiveMode();
+
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+            files = ftpClient.listFiles();
+
+
+        } catch (IOException ex) {
+            System.out.println("Error: " + ex.getMessage());
+            ex.printStackTrace();
+        } finally {
+            try {
+                if (ftpClient.isConnected()) {
+                    ftpClient.logout();
+                    ftpClient.disconnect();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return files;
     }
 }
